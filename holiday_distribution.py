@@ -147,7 +147,7 @@ class HolidayTool:
 
         try:
             fei_file_path = os.path.join(os.path.dirname(__file__), "Feiertage.xlsx")
-            fei_wb = load_workbook(ei_file_path, data_only=True)
+            fei_wb = load_workbook(fei_file_path, data_only=True)
             fei_sheet = fei_wb.active
         except Exception as e:
             raise Exception(f"Can't load holidays file: {e}")
