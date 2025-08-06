@@ -1,0 +1,23 @@
+# Web framework
+fastapi==0.116.1
+uvicorn==0.35.0
+python-multipart==0.0.20
+starlette==0.47.2
+
+# Excel,PDF processing
+pandas==2.3.1
+openpyxl==3.1.5
+pdfplumber==0.11.7
+PyPDF2==3.0.1
+tabula-py==2.10.0
+msoffcrypto-tool==5.4.2
+
+# NLP for anonymization
+spacy==3.8.7
+de_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/de_core_news_sm-3.8.0/de_core_news_sm-3.8.0-py3-none-any.whl
+
+#Misc
+requests==2.32.4
+tqdm==4.67.1
+numpy==2.2.6
+python-dateutil==2.9.0.post0
