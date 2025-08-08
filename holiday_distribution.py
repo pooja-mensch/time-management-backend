@@ -157,8 +157,8 @@ class HolidayTool:
                     if cell_value and str(cell_value).isdigit():
                         year = int(cell_value)
                         if 2015 <= year <= 2030:  # Reasonable year range
-                            all_years.append((year, position))
-                            print(f"Found year {year} at position B{current_position}")
+                            all_years.append((year, current_position))
+                            #print(f"Found year {year} at position B{current_position}")
                         else:
                             # If we hit an invalid year, we might have reached the end
                             break
@@ -178,7 +178,7 @@ class HolidayTool:
             
             # Check if years are consecutive (allowing for some gaps)
             if not all(years_only[i+1] - years_only[i] <= 2 for i in range(len(years_only)-1)):
-                print("Warning: Years might not be consecutive")
+                #print("Warning: Years might not be consecutive")
             
             self.file_format = detected_format
             self.actual_years = years_only
@@ -188,9 +188,9 @@ class HolidayTool:
             for year, position in all_years:
                 self.yr_offset[year] = position
             
-            print(f"Detected format: {detected_format} employees")
-            print(f"Years found: {self.actual_years}")
-            print(f"Year offsets: {self.yr_offset}")
+            #print(f"Detected format: {detected_format} employees")
+            #print(f"Years found: {self.actual_years}")
+            #print(f"Year offsets: {self.yr_offset}")
             
             # Verify we have holiday data for all detected years
             missing_years = []
@@ -199,15 +199,15 @@ class HolidayTool:
                     missing_years.append(year)
             
             if missing_years:
-                print(f"Warning: No holiday data available for years: {missing_years}")
+                #print(f"Warning: No holiday data available for years: {missing_years}")
                 # Remove years without holiday data
                 self.actual_years = [y for y in self.actual_years if y in self.bl_mapping]
-                print(f"Will process only years with holiday data: {self.actual_years}")
+                #print(f"Will process only years with holiday data: {self.actual_years}")
             
             return True
             
         except Exception as e:
-            print(f"Error detecting file format: {e}")
+            #print(f"Error detecting file format: {e}")
             return False
     
     def get_metadata(self):
@@ -258,7 +258,7 @@ class HolidayTool:
             raise Exception(f"Can't load holidays file: {e}")
            
 
-        print(f"\nDoing {emp_data['full_name']} in {emp_data['state']}...")
+        #print(f"\nDoing {emp_data['full_name']} in {emp_data['state']}...")
 
         emp_row_pos = self.emp_start_row + emp_data['row_offset']
 
@@ -266,10 +266,10 @@ class HolidayTool:
         end_dt = pd.to_datetime(emp_data.get('end'))
 
         if pd.isna(start_dt) or pd.isna(end_dt):
-            print(f"  Missing dates for {emp_data['full_name']}")
+            #print(f"  Missing dates for {emp_data['full_name']}")
             return False
 
-        print(f"  Working: {start_dt} to {end_dt}")
+        #print(f"  Working: {start_dt} to {end_dt}")
 
         total_marked = 0
         total_skipped = 0
@@ -278,14 +278,14 @@ class HolidayTool:
             wb_data_only = load_workbook(self.path, data_only=True)
             sheet_data_only = wb_data_only['IST Stunden']
         except Exception as e:
-            print(f"Warning: Could not load workbook with data_only=True: {e}")
+            #print(f"Warning: Could not load workbook with data_only=True: {e}")
             sheet_data_only = None
         for yr in self.actual_years:
             if yr not in self.bl_mapping:
-                print(f"  No holiday data for year {yr}")
+                #print(f"  No holiday data for year {yr}")
                 continue
             if emp_data['state'] not in self.bl_mapping[yr]:
-                print(f"  Can't find {emp_data['state']} for {yr}")
+                #print(f"  Can't find {emp_data['state']} for {yr}")
                 continue
 
             src_row = self.bl_mapping[yr][emp_data['state']]
@@ -342,11 +342,11 @@ class HolidayTool:
                     print(f"  Skipped non-holiday at column {col_num}")
                     
 
-            print(f"  {yr}: marked {marked_this_yr}, skipped {skipped_this_yr}")
+            #print(f"  {yr}: marked {marked_this_yr}, skipped {skipped_this_yr}")
             total_marked += marked_this_yr
             total_skipped += skipped_this_yr
 
-        print(f"  Total for {emp_data['full_name']}: {total_marked} marked, {total_skipped} skipped")
+        #print(f"  Total for {emp_data['full_name']}: {total_marked} marked, {total_skipped} skipped")
         return True
     
     def do_all_holidays(self, out_path=None):
@@ -354,7 +354,7 @@ class HolidayTool:
             print("No employees yet")
             return None
         
-        print(f"\nProcessing {len(self.emp_list)} people...")
+        #print(f"\nProcessing {len(self.emp_list)} people...")
         
         try:
             wb = load_workbook(self.path, data_only=False)
@@ -376,8 +376,8 @@ class HolidayTool:
                             }
                 print(f"Extracted {sum(1 for k in formulas_comments if k.startswith(sheet_name + '!'))} formulas/comments from {sheet_name}")
         except Exception as e:
-             print(f"Can't load file: {e}")
-             return None
+            #print(f"Can't load file: {e}")
+            return None
             
         
         good_count = 0
@@ -511,8 +511,8 @@ class HolidayTool:
         return True
 
 app = Flask(__name__)
-CORS(app)  
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
+CORS(app)
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 temp_files = {}
 
 @app.route('/api/health')
