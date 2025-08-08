@@ -178,7 +178,7 @@ class HolidayTool:
             
             # Check if years are consecutive (allowing for some gaps)
             if not all(years_only[i+1] - years_only[i] <= 2 for i in range(len(years_only)-1)):
-                #print("Warning: Years might not be consecutive")
+                print("Warning: Years might not be consecutive")
             
             self.file_format = detected_format
             self.actual_years = years_only
