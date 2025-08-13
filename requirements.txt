@@ -7,4 +7,4 @@ xlrd==2.0.1
 Werkzeug==2.3.7
 python-dateutil==2.8.2
 requests==2.31.0
-gunicorn==21.2.0Ö
+gunicorn==21.2.00
