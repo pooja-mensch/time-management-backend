@@ -24,6 +24,12 @@ app = Flask(__name__)
 CORS(app, origins=['https://time-management-frontend-delta.vercel.app/'])  # Enable CORS for React frontend
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
+app.run(
+        debug=True,      # Enable debug mode for development
+        host='0.0.0.0',  # Allow connections from any IP
+        port=8000        # Port number
+    )
+
 # Configuration
 ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
 
@@ -239,8 +245,4 @@ if __name__ == '__main__':
     print("Press Ctrl+C to stop the server")
     print("=" * 60)
     
-    app.run(
-        debug=True,      # Enable debug mode for development
-        host='0.0.0.0',  # Allow connections from any IP
-        port=8000        # Port number
-    )
+   
