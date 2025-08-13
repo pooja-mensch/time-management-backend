@@ -24,12 +24,12 @@ app = Flask(__name__)
 CORS(app, origins=['https://time-management-frontend-delta.vercel.app/'])  # Enable CORS for React frontend
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+
+    
 app.run(
         debug=True,     
         host='0.0.0.0', 
-        port=port       
+        port=5000      
     )
 
 # Configuration
