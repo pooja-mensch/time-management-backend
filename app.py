@@ -25,13 +25,6 @@ CORS(app, origins=['https://time-management-frontend-delta.vercel.app/'])  # Ena
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 
-    
-app.run(
-        debug=True,     
-        host='0.0.0.0', 
-        port=5000      
-    )
-
 # Configuration
 ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
 
