@@ -21,8 +21,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app, origins=['https://time-management-frontend-m4p76b72u-pooja-menschs-projects.vercel.app/',
-                   'time-management-frontend-gky3o7z6i-pooja-menschs-projects.vercel.app'])  # Enable CORS for React frontend
+CORS(app, origins=['https://time-management-frontend-gky3o7z6i-pooja-menschs-projects.vercel.app',
+                 'http://localhost:3000',])  # Enable CORS for React frontend
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 
@@ -75,10 +75,6 @@ def process_holidays():
         # Fun messages from your colleague's code
         holiday_lines = [
             "Spreading holidays like cheese on a hot pizza 🍕📅",
-            "Distributing holidays like Nutella on warm toast 🧈📆",
-            "Layering holidays like frosting on a cake 🎂📅",
-            "Smearing holidays across your calendar like butter on bread 🧈🗓️",
-            "Sprinkling holidays like herbs on a Margherita 🍃🍕"
         ]
         fun_message = random.choice(holiday_lines)
         
