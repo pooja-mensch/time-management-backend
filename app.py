@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app, origins=['https://time-management-frontend-m4p76b72u-pooja-menschs-projects.vercel.app/',
-                   'https://time-management-frontend.vercel.app'])  # Enable CORS for React frontend
+                   'time-management-frontend-gky3o7z6i-pooja-menschs-projects.vercel.app'])  # Enable CORS for React frontend
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 
