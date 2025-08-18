@@ -26,13 +26,13 @@ CORS(app, origins=['https://time-management-frontend-delta.vercel.app',
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 
-# Configuration
+
 ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
 
-# Business Logic Constants (from your colleague's implementation)
+
 MAX_EMPLOYEES = 30
-REQUIRED_SHEETS = ["MA Übersicht", "IST Stunden"]  # Required Excel sheets
-HOLIDAY_FILE = "Feiertage.xlsx"  # Holiday reference file
+REQUIRED_SHEETS = ["MA Übersicht", "IST Stunden"] 
+HOLIDAY_FILE = "Feiertage.xlsx"  
 DEFAULT_OUTPUT_SUFFIX = "_holidays_added"
 
 # Store temporary files for download
@@ -46,7 +46,7 @@ def allowed_file(filename):
 def home():
     """Simple home page to test if server is running"""
     return """
-    <h1>Holiday Processor Server is running! 🎉</h1>
+    <h1>Holiday Processor Server is running!</h1>
     <p>German Holiday Distribution System</p>
     <ul>
         <li>Max employees: {}</li>
@@ -72,9 +72,9 @@ def health_check():
 def process_holidays():
     """Main endpoint to process uploaded Excel files using colleague's HolidayTool"""
     try:
-        # Fun messages from your colleague's code
+       
         holiday_lines = [
-            "Spreading holidays like cheese on a hot pizza 🍕📅",
+            "Spreading holidays like cheese on a hot pizza!",
         ]
         fun_message = random.choice(holiday_lines)
         
