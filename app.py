@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Dynamic CORS configuration
-FRONTEND_URLS = os.getenv('FRONTEND_URLS', 'http://localhost:3000').split(',')
+FRONTEND_URLS = os.getenv('https://time-management-frontend-delta.vercel.app', 'http://localhost:3000').split(',')
 CORS(app, origins=FRONTEND_URLS)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
