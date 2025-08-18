@@ -15,6 +15,11 @@ import os
 import logging
 from holiday_distribution import HolidayTool
 import random
+from threading import Thread
+import threading
+import signal
+import time
+import logging
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -25,11 +30,7 @@ CORS(app, origins=['https://time-management-frontend-delta.vercel.app',
                  'http://localhost:3000',])  # Enable CORS for React frontend
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-
-
 ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
-
-
 MAX_EMPLOYEES = 30
 REQUIRED_SHEETS = ["MA Übersicht", "IST Stunden"] 
 HOLIDAY_FILE = "Feiertage.xlsx"  
@@ -37,6 +38,41 @@ DEFAULT_OUTPUT_SUFFIX = "_holidays_added"
 
 # Store temporary files for download
 temp_files = {}
+processing_status = {}
+
+class TimeoutError(Exception):
+    pass
+
+def timeout_handler(signum, frame):
+    raise TimeoutError("Processing timeout")
+
+def process_file_with_timeout(tool, output_file, timeout_seconds=240):
+    """Process file with timeout handling"""
+    result = None
+    exception = None
+    
+    def target():
+        nonlocal result, exception
+        try:
+            result = tool.execute(output_file)
+        except Exception as e:
+            exception = e
+    
+    thread = Thread(target=target)
+    thread.daemon = True
+    thread.start()
+    thread.join(timeout_seconds)
+    
+    if thread.is_alive():
+        # Thread is still running, timeout occurred
+        logger.error(f"Processing timeout after {timeout_seconds} seconds")
+        raise TimeoutError(f"Processing took longer than {timeout_seconds} seconds")
+    
+    if exception:
+        raise exception
+    
+    return result
+
 
 def allowed_file(filename):
     """Check if uploaded file has valid extension"""
