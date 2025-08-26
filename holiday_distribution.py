@@ -107,7 +107,13 @@ class HolidayTool:
     
     def get_metadata(self):
         try:
-            self.meta_data = pd.read_excel(self.path, sheet_name="MA Übersicht")
+            # Skip the first few rows with merged headers and read from where actual data starts
+            self.meta_data = pd.read_excel(
+                self.path, 
+                sheet_name="MA Übersicht",
+                header=2,  # Start reading headers from row 3 (0-indexed)
+                skiprows=None  # Or specify which rows to skip
+            )
             return True
         except Exception as e:
             raise Exception(f"Metadata error: {e}")
