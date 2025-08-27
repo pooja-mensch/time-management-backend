@@ -95,12 +95,12 @@ class HolidayTool:
         self.actual_years = []   
         self.yr_offset = {}
         
-        self.base_row = 1
+        self.base_row = 3
         self.fei_first = 4
         self.fei_last = 377
         self.ist_first = 15
         self.ist_last = 390
-        self.emp_start_row = 4
+        self.emp_start_row = 6
         
         warnings.filterwarnings("ignore", message="Conditional Formatting extension is not supported and will be removed")
     
@@ -123,7 +123,7 @@ class HolidayTool:
             
             # Test each pattern to see which one has valid years
             for pattern in patterns_to_test:
-                test_positions = [1, 1 + pattern['step'], 1 + 2*pattern['step']]
+                test_positions = [3, 3 + pattern['step'], 3 + 2*pattern['step']]
                 valid_years = 0
                 
                 for pos in test_positions:
@@ -146,11 +146,11 @@ class HolidayTool:
             
             # Now scan ALL positions to find all years
             all_years = []
-            position = 1  # Start at B1
-            max_positions_to_check = 20  # Safety limit
+            position = 3 # Start at B1
+            max_positions_to_check = 23  # Safety limit
             
             for i in range(max_positions_to_check):
-                current_position = 1 + (i * step_size)
+                current_position = 3 + (i * step_size)
                 
                 try:
                     cell_value = sheet.cell(row=current_position, column=2).value
@@ -212,7 +212,7 @@ class HolidayTool:
     
     def get_metadata(self):
         try:
-            self.meta_data = pd.read_excel(self.path, sheet_name="MA Übersicht")
+            self.meta_data = pd.read_excel(self.path, sheet_name="MA Übersicht",skiprows=2)
             return True
         except Exception as e:
             raise Exception(f"Metadata error: {e}")
