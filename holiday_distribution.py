@@ -138,7 +138,7 @@ class HolidayTool:
                 'state': row["Bundesland"],
                 'orig_idx': i,
                 'emp_num': count + 1,
-                'row_offset': count,
+                'row_offset': i+3,
                 'start': start_dt,
                 'end': end_dt
             }
