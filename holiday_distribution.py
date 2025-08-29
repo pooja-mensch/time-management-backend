@@ -94,7 +94,6 @@ class HolidayTool:
         self.file_format = None  # 10, 20, or 30
         self.actual_years = []   
         self.yr_offset = {}
-        
         self.base_row = 3
         self.fei_first = 4
         self.fei_last = 377
@@ -213,6 +212,7 @@ class HolidayTool:
     def get_metadata(self):
         try:
             self.meta_data = pd.read_excel(self.path, sheet_name="MA Übersicht",skiprows=2)
+
             return True
         except Exception as e:
             raise Exception(f"Metadata error: {e}")
@@ -237,7 +237,7 @@ class HolidayTool:
                 'state': row["Bundesland"],
                 'orig_idx': i,
                 'emp_num': count + 1,
-                'row_offset': count,
+                'row_offset': i+3,
                 'start': start_dt,
                 'end': end_dt
             }

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
 File: app.py
-Main Flask server for Holiday Distribution System
-Updated to use colleague's HolidayTool class
+Main Flask server with timeout handling and progress tracking
 """
 
 from flask import Flask, request, jsonify, send_file
@@ -13,28 +12,67 @@ import uuid
 import shutil
 import os
 import logging
+import signal
+import time
 from holiday_distribution import HolidayTool
 import random
+from threading import Thread
+import threading
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for React frontend
+
+# Dynamic CORS configuration
+FRONTEND_URLS = os.getenv('FRONTEND_URLS', 'http://localhost:3000').split(',')
+CORS(app, origins=FRONTEND_URLS)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Configuration
 ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
-
-# Business Logic Constants (from your colleague's implementation)
 MAX_EMPLOYEES = 30
-REQUIRED_SHEETS = ["MA Übersicht", "IST Stunden"]  # Required Excel sheets
-HOLIDAY_FILE = "Feiertage.xlsx"  # Holiday reference file
+REQUIRED_SHEETS = ["MA Übersicht", "IST Stunden"]
+HOLIDAY_FILE = "Feiertage.xlsx"
 DEFAULT_OUTPUT_SUFFIX = "_holidays_added"
 
-# Store temporary files for download
+# Store temporary files and processing status
 temp_files = {}
+processing_status = {}
+
+class TimeoutError(Exception):
+    pass
+
+def timeout_handler(signum, frame):
+    raise TimeoutError("Processing timeout")
+
+def process_file_with_timeout(tool, output_file, timeout_seconds=240):
+    """Process file with timeout handling"""
+    result = None
+    exception = None
+    
+    def target():
+        nonlocal result, exception
+        try:
+            result = tool.execute(output_file)
+        except Exception as e:
+            exception = e
+    
+    thread = Thread(target=target)
+    thread.daemon = True
+    thread.start()
+    thread.join(timeout_seconds)
+    
+    if thread.is_alive():
+        # Thread is still running, timeout occurred
+        logger.error(f"Processing timeout after {timeout_seconds} seconds")
+        raise TimeoutError(f"Processing took longer than {timeout_seconds} seconds")
+    
+    if exception:
+        raise exception
+    
+    return result
 
 def allowed_file(filename):
     """Check if uploaded file has valid extension"""
@@ -43,16 +81,17 @@ def allowed_file(filename):
 @app.route('/')
 def home():
     """Simple home page to test if server is running"""
-    return """
+    return f"""
     <h1>Holiday Processor Server is running! 🎉</h1>
     <p>German Holiday Distribution System</p>
     <ul>
-        <li>Max employees: {}</li>
-        <li>Required sheets: {}</li>
-        <li>Holiday file: {}</li>
+        <li>Max employees: {MAX_EMPLOYEES}</li>
+        <li>Required sheets: {', '.join(REQUIRED_SHEETS)}</li>
+        <li>Holiday file: {HOLIDAY_FILE}</li>
+        <li>Allowed origins: {', '.join(FRONTEND_URLS)}</li>
     </ul>
     <p>Use your React frontend to upload files!</p>
-    """.format(MAX_EMPLOYEES, ', '.join(REQUIRED_SHEETS), HOLIDAY_FILE)
+    """
 
 @app.route('/health')
 def health_check():
@@ -63,35 +102,36 @@ def health_check():
         'max_employees': MAX_EMPLOYEES,
         'required_sheets': REQUIRED_SHEETS,
         'holiday_file': HOLIDAY_FILE,
-        'holiday_file_exists': os.path.exists(HOLIDAY_FILE)
+        'holiday_file_exists': os.path.exists(HOLIDAY_FILE),
+        'allowed_cors_origins': FRONTEND_URLS
     })
 
 @app.route('/process-holidays', methods=['POST'])
 def process_holidays():
-    """Main endpoint to process uploaded Excel files using colleague's HolidayTool"""
+    """Main endpoint to process uploaded Excel files with timeout handling"""
+    processing_id = str(uuid.uuid4())
+    
     try:
-        # Fun messages from your colleague's code
+        # Fun messages
         holiday_lines = [
             "Spreading holidays like cheese on a hot pizza 🍕📅",
-            "Distributing holidays like Nutella on warm toast 🧈📆",
-            "Layering holidays like frosting on a cake 🎂📅",
-            "Smearing holidays across your calendar like butter on bread 🧈🗓️",
-            "Sprinkling holidays like herbs on a Margherita 🍃🍕"
+            "Processing your data faster than Santa delivers presents 🎅📊",
+            "Crunching numbers like autumn leaves 🍂🔢"
         ]
         fun_message = random.choice(holiday_lines)
         
-        logger.info("Received request to process holidays")
+        logger.info(f"[{processing_id}] Received request to process holidays")
         
         # Check if file is in the request
         if 'file' not in request.files:
-            logger.error("No file in request")
+            logger.error(f"[{processing_id}] No file in request")
             return jsonify({
                 'success': False,
                 'message': 'No file uploaded'
             }), 400
 
         file = request.files['file']
-        logger.info(f"Received file: {file.filename}")
+        logger.info(f"[{processing_id}] Received file: {file.filename} ({file.content_length} bytes)")
         
         # Check if file is actually selected
         if file.filename == '':
@@ -112,13 +152,13 @@ def process_holidays():
         input_file = os.path.join(temp_dir, secure_filename(file.filename))
         file.save(input_file)
         
-        logger.info(f"Saved file to: {input_file}")
+        logger.info(f"[{processing_id}] Saved file to: {input_file}")
         
-        # Get max employees parameter (optional)
+        # Get max employees parameter
         max_employees = request.form.get('max_employees', MAX_EMPLOYEES, type=int)
         
-        # Initialize HolidayTool with the uploaded file
-        logger.info("Initializing HolidayTool...")
+        # Initialize HolidayTool
+        logger.info(f"[{processing_id}] Initializing HolidayTool...")
         tool = HolidayTool(input_file)
         
         # Set max employees if different from default
@@ -126,14 +166,29 @@ def process_holidays():
             tool.change_max(max_employees)
         
         # Generate output filename
-        base_filename = file.filename.rsplit('.', 1)[0]  # Remove extension
+        base_filename = file.filename.rsplit('.', 1)[0]
         output_filename = f"{base_filename}{DEFAULT_OUTPUT_SUFFIX}_{uuid.uuid4().hex[:8]}.xlsx"
         output_file = os.path.join(temp_dir, output_filename)
         
-        logger.info(f"Processing file: {input_file} -> {output_file}")
+        logger.info(f"[{processing_id}] Processing file: {input_file} -> {output_file}")
         
-        # Execute the holiday processing using colleague's tool
-        result = tool.execute(output_file)
+        # Store processing status
+        processing_status[processing_id] = {
+            'status': 'processing',
+            'start_time': time.time(),
+            'message': 'Processing your file...'
+        }
+        
+        # Execute with timeout handling
+        try:
+            result = process_file_with_timeout(tool, output_file, timeout_seconds=240)  # 4 minutes
+        except TimeoutError as e:
+            logger.error(f"[{processing_id}] {str(e)}")
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            return jsonify({
+                'success': False,
+                'message': 'Processing timeout. Your file might be too large or complex. Please try with a smaller file or contact support.'
+            }), 408  # Request Timeout
         
         if result:
             # Store file info for download
@@ -144,26 +199,33 @@ def process_holidays():
                 'temp_dir': temp_dir
             }
             
-            logger.info(f"Processing completed successfully. File ID: {file_id}")
+            processing_status[processing_id] = {
+                'status': 'completed',
+                'end_time': time.time(),
+                'message': 'Processing completed successfully'
+            }
+            
+            logger.info(f"[{processing_id}] Processing completed successfully. File ID: {file_id}")
             
             return jsonify({
                 'success': True,
                 'message': fun_message,
                 'employees_processed': len(tool.emp_list),
                 'download_url': f'/download/{file_id}',
-                'filename': output_filename
+                'filename': output_filename,
+                'processing_id': processing_id
             })
         else:
             # Clean up on failure
             shutil.rmtree(temp_dir, ignore_errors=True)
-            logger.error("Processing failed")
+            logger.error(f"[{processing_id}] Processing failed")
             return jsonify({
                 'success': False,
                 'message': 'Failed to process the file. Please check the file format and data.'
             }), 500
         
     except Exception as e:
-        logger.error(f"Error occurred: {str(e)}")
+        logger.error(f"[{processing_id}] Error occurred: {str(e)}")
         return jsonify({
             'success': False,
             'message': f'An error occurred: {str(e)}'
@@ -177,7 +239,7 @@ def download_file(file_id):
             logger.error(f"File ID not found: {file_id}")
             return jsonify({
                 'success': False,
-                'message': 'File not found'
+                'message': 'File not found or expired'
             }), 404
         
         file_info = temp_files[file_id]
@@ -206,7 +268,7 @@ def download_file(file_id):
 
 @app.route('/cleanup/<file_id>', methods=['DELETE'])
 def cleanup_file(file_id):
-    """Optional endpoint to clean up temporary files"""
+    """Endpoint to clean up temporary files"""
     try:
         if file_id in temp_files:
             file_info = temp_files[file_id]
@@ -228,19 +290,11 @@ if __name__ == '__main__':
     print(f"Max employees: {MAX_EMPLOYEES}")
     print(f"Required sheets: {REQUIRED_SHEETS}")
     print(f"Holiday file: {HOLIDAY_FILE}")
+    print(f"Processing timeout: 4 minutes")
     
-    # Check if holiday file exists
     if os.path.exists(HOLIDAY_FILE):
         print(f"✅ Holiday file found: {HOLIDAY_FILE}")
     else:
         print(f"⚠️  Holiday file not found: {HOLIDAY_FILE}")
-        print("   The system will still work but may have limited holiday data")
     
-    print("Press Ctrl+C to stop the server")
     print("=" * 60)
-    
-    app.run(
-        debug=True,      # Enable debug mode for development
-        host='0.0.0.0',  # Allow connections from any IP
-        port=8000        # Port number
-    )
