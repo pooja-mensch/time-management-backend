@@ -231,6 +231,20 @@ class HolidayTool:
 
             start_dt = row.iloc[19]
             end_dt = row.iloc[20]
+                       
+            work_days_info = {
+                'Monday': row.iloc[9] if len(row) > 9 else None,
+                'Tuesday': row.iloc[10] if len(row) > 10 else None, 
+                'Wednesday': row.iloc[11] if len(row) > 11 else None,
+                'Thursday': row.iloc[12] if len(row) > 12 else None,
+                'Friday': row.iloc[13] if len(row) > 13 else None
+            }
+            
+            working_weekdays = []
+            for day, works in work_days_info.items():
+                works_day = str(works).upper() == 'JA' if not pd.isna(works) else False
+                if works_day:
+                    working_weekdays.append(day)
 
             emp_info = {
                 'full_name': f"{row['Vorname']} {row['Nachname']}",
@@ -239,7 +253,10 @@ class HolidayTool:
                 'emp_num': count + 1,
                 'row_offset':count,
                 'start': start_dt,
-                'end': end_dt
+                'end': end_dt,
+                'working_weekdays': working_weekdays,
+                'work_days_info': work_days_info
+                
             }
 
             self.emp_list.append(emp_info)
@@ -259,6 +276,9 @@ class HolidayTool:
            
 
         #print(f"\nDoing {emp_data['full_name']} in {emp_data['state']}...")
+        print(f"\n Processing {emp_data['full_name']} in {emp_data['state']}...")
+        print(f"  Working weekdays: {', '.join(emp_data.get('working_weekdays', []))}")
+
 
         emp_row_pos = self.emp_start_row + emp_data['row_offset']
 
@@ -327,6 +347,16 @@ class HolidayTool:
                         skipped_this_yr += 1
                         continue
 
+                    
+                    weekday_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                    holiday_weekday = weekday_names[dt_obj.weekday()]
+                    
+                    if holiday_weekday not in emp_data.get('working_weekdays', []):
+                        print(f"  Skipped holiday at column {col_num} (date: {dt_cell}, {holiday_weekday}) - employee doesn't work on {holiday_weekday}")
+                        
+                        skipped_this_yr += 1
+                        continue
+
                     cell = sheet.cell(row=target_row_num, column=col_num)
                     existing_comment = cell.comment
                     existing_style = cell._style if hasattr(cell, '_style') else None
@@ -335,7 +365,7 @@ class HolidayTool:
                         cell.comment = existing_comment
                     if existing_style:
                         cell._style = existing_style
-                    print(f"  Marked 'f' at cell {cell.coordinate} for {yr}")
+                    print(f"  Marked 'f' at cell {cell.coordinate} for {yr}({holiday_weekday})")
                     marked_this_yr += 1
                 else:
                     skipped_this_yr += 1
